@@ -1,0 +1,23 @@
+--处理数据为空表
+select 'alter table ' || table_name || ' allocate extent;' from user_tables where num_rows = 0;
+
+--导出现有有用户数据
+exp lths/ebank@ebank file=lths20170317.dmp
+exp hrbscommon/hrbscommon@symdb1 file=hrbscommon20170317.dmp 
+exp hrbsfirmbank/hrbsfirmbank@symdb1 file=hrbsfirmbank20170317.dmp 
+exp hrbsperbank/hrbsperbank@symdb1 file=hrbsperbank20170317.dmp
+
+--转换移植脚本编码
+find HRBS -type d -exec mkdir -p utf/{} \;
+find HRBS -type f -exec iconv -c -f gb2312 -t UTF-8 {} -o utf/{} \;
+find HRBS -type f -exec iconv -c -f  ANSI -t UTF-8 {} -o utf/{} \;
+
+
+
+--1.查看数据使用字符集
+select * from v$nls_parameters where parameter = 'NLS_CHARACTERSET';
+--2.查看服务器使用字符集
+echo $NLS_LANG
+--设置服务字符集(设置服务和数据库中查询的保持一致)
+set NLS_LANG=AMERICAN_AMERICA.AL32UTF8
+export NLS_LANG=AMERICAN_AMERICA.AL32UTF8

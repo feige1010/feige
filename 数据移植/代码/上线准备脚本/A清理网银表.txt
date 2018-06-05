@@ -1,0 +1,56 @@
+truncate table PB_ACC_INF;
+truncate table PB_CERT_INF;
+truncate table PB_CST_APP;
+truncate table PB_CST_CURR_LIMIT;
+truncate table PB_CST_TRANS_LIMIT;
+truncate table PB_CST_INF;
+truncate table PB_CST_ITEM;
+truncate table PB_ELECTRONIC_BILL;
+truncate table PB_FIX_CURRENT_TRAN;
+truncate table PB_REL_CST_BOOK;
+truncate table PB_TRANSFER;
+truncate table PB_TRAN_FLOW;
+truncate table CB_ACC_INF;
+truncate table CB_AUTH_HISTORY;
+truncate table CB_AUTH_DEF;
+truncate table CB_AUTH_AREA;
+truncate table CB_CST_BSN;
+truncate table CB_AUTH_REF;
+truncate table CB_CERT_INF;
+truncate table CB_CST_INF;
+truncate table CB_CST_NODE;
+truncate table CB_CST_PAYEE;
+truncate table CB_LIMIT_ACC;
+truncate table CB_PRE_TRANFLOW;
+truncate table CB_USER_ACC;
+truncate table CB_USER_BSN;
+truncate table CB_USER_INF;
+truncate table CB_WAGE_DETAIL;
+truncate table CB_TRANFLOW;
+truncate table CB_FIN_FIXED;
+truncate table CB_INFORM_DEPOSIT_OPEN;
+truncate table CB_INFORM_WITHDRAW;
+truncate table CB_WAGE_FLOW;
+truncate table IM_OPERATION_FLOW;
+truncate table PB_CST_INF_HIS;
+truncate table CB_TRANS_LIMIT;
+
+
+
+create table PB_ACC_INF_1212 as 
+select * from PB_ACC_INF;
+
+create table PB_CERT_INF_1212 as 
+select * from PB_CERT_INF;
+
+create table PB_CST_INF_1212 as 
+select * from PB_CST_INF;
+
+create table PB_REL_CST_BOOK_1212 as 
+select * from PB_REL_CST_BOOK;
+
+create table PB_CST_CURR_LIMIT_1212 as 
+select * from PB_CST_CURR_LIMIT;
+
+create table  PB_CST_TRANS_LIMIT_1212 as 
+select * from PB_CST_TRANS_LIMIT;
