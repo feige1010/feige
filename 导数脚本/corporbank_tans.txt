@@ -1,0 +1,138 @@
+ -----------------企业交易明细查询--------------------
+ select 机构, 客户姓名, tf.账号, 开户时间, tf.交易时间, tf.交易金额,(select BSN.BDF_name from CB_BSNDEF bsn where BSN.BDF_BSNCODE = BSNCODE) as 交易类型
+   from (SELECT CST.CIF_EBANKNODE AS 机构,
+                CST.CIF_NAMECN as 客户姓名,
+                CST.CIF_MOBILE as 手机号,
+                to_char(TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                CST.CIF_CSTNO as 网银客户号,
+                CST.CIF_HOSTNO as 核心客户号
+           FROM CB_CST_INF CST  --CB_CST_INF企业客户信息表  CB_ACC_INF企业账户信息
+            UNION
+         SELECT HIS.CIF_EBANKNODE AS 机构,
+                HIS.CIF_NAMECN as 客户姓名,
+                HIS.CIF_MOBILE as 手机号,
+                to_char(TO_DATE (HIS.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                HIS.CIF_CSTNO as 网银客户号,
+                HIS.CIF_HOSTNO as 核心客户号
+           FROM CB_CST_HIS HIS
+           
+            ) ca,
+        (
+         select T.TFL_CSTNO as 客户号, T.TFL_PAYACC as  账号, t.tfl_tranamt AS 交易金额, TFL_SUBMITTIME AS 交易时间, TFL_BSNCODE as BSNCODE  
+         from CB_TRANFLOW t 
+         where TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+          AND TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         and T.TFL_STT in('90', '42')  --交易成功状态   CB_TRANFLOW 行内、行外单笔转账
+         and TFL_BSNCODE != '10200100' --过滤掉批量转账，批量下面有表查询
+         union all
+         select t.IDO_CSTNO as 客户号, T.IDO_PAYNO as  账号, t.ido_amount AS 交易金额, IDO_SUBMITTIME AS 交易时间, IDO_BSNCODE as BSNCODE
+         from CB_INFORM_DEPOSIT_OPEN t  --CB_INFORM_DEPOSIT_OPEN 通知存款开户信息流水表
+         where T.IDO_STT in('42', '90') 
+         and TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss') 
+         union all
+         select t.ciw_cstno as 客户号, T.ciw_PAYNO as  账号, t.ciw_amount AS 交易金额, CIW_SUBMITTIME AS 交易时间, CIW_BSNCODE as BSNCODE
+         from CB_INFORM_WITHDRAW t  --CB_INFORM_WITHDRAW通知存款支取流水表
+         where
+           T.ciw_STT in('42', '90')
+         and TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         union all
+         select  t.FFX_CSTNO as 客户号, T.FFX_PAYACC as  账号, t.ffx_tranamt AS 交易金额, FFX_SUBMITTIME AS 交易时间,  FFX_BSNCODE as BSNCODE
+         from CB_FIN_FIXED t  --CB_FIN_FIXED活转定，定转活流水表
+         where T.ffx_STT in('42', '90') 
+         and TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         union all
+ 
+         select T.TFL_CSTNO as 客户号, BF.BFL_PAYACC as  账号, t.tfl_tranamt AS 交易金额, TFL_SUBMITTIME AS 交易时间, TFL_BSNCODE as BSNCODE
+         from CB_TRANFLOW t, cb_batch_flow  BF 
+         where TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+          AND TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         and T.TFL_STT in('42')  --交易成功状态   CB_TRANFLOW 行内、行外单笔转账
+         and TFL_BSNCODE = '10200100'
+         AND T.TFL_BATCHNO = BF.BFL_BATCHNO
+         
+         union all
+         
+         select  wf.wfl_cstno as 客户号, wf.wfl_Payacc as  账号, WDT_AMT AS 交易金额, wf.wfl_submittime AS 交易时间 ,WFL_BSNCODE as BSNCODE 
+         from CB_WAGE_FLOW wf, CB_WAGE_DETAIL --代发工资
+         where WDT_BATCHNO = WFL_BATCHNO   
+               and TO_DATE (wf.wfl_submittime, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+               and TO_DATE (wf.wfl_submittime, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+               and WDT_HOSTCODE = '000000'
+        ) tf
+  where ca.网银客户号 = tf.客户号
+  order by 交易时间 desc;
+  
+ 
+  -----------------企业交易汇总查询--------------------
+ select count(*) as 交易笔数, nvl(sum(交易金额),0) as 交易金额
+  from (
+select 机构, 客户姓名, tf.账号, 开户时间, tf.交易时间, tf.交易金额
+   from (SELECT CST.CIF_EBANKNODE AS 机构,
+                CST.CIF_NAMECN as 客户姓名,
+                CST.CIF_MOBILE as 手机号,
+                to_char(TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                CST.CIF_CSTNO as 网银客户号,
+                CST.CIF_HOSTNO as 核心客户号
+           FROM CB_CST_INF CST  --CB_CST_INF企业客户信息表  CB_ACC_INF企业账户信息
+           -- AND TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171231 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+           -- TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+            UNION
+         SELECT HIS.CIF_EBANKNODE AS 机构,
+                HIS.CIF_NAMECN as 客户姓名,
+                HIS.CIF_MOBILE as 手机号,
+                to_char(TO_DATE (HIS.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                HIS.CIF_CSTNO as 网银客户号,
+                HIS.CIF_HOSTNO as 核心客户号
+           FROM CB_CST_HIS HIS
+           
+            ) ca,
+        (
+         select T.TFL_CSTNO as 客户号, T.TFL_PAYACC as  账号, t.tfl_tranamt AS 交易金额, TFL_SUBMITTIME AS 交易时间  
+         from CB_TRANFLOW t 
+         where TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171231 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+          AND TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         and T.TFL_STT in('90', '42')  --交易成功状态   CB_TRANFLOW 行内、行外单笔转账
+         and TFL_BSNCODE != '10200100' --过滤掉批量转账，批量下面有表查询
+         union all
+         select t.IDO_CSTNO as 客户号, T.IDO_PAYNO as  账号, t.ido_amount AS 交易金额, IDO_SUBMITTIME AS 交易时间    
+         from CB_INFORM_DEPOSIT_OPEN t  --CB_INFORM_DEPOSIT_OPEN 通知存款开户信息流水表
+         where T.IDO_STT in('42', '90') 
+         and TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171231 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss') 
+         union all
+         select t.ciw_cstno as 客户号, T.ciw_PAYNO as  账号, t.ciw_amount AS 交易金额, CIW_SUBMITTIME AS 交易时间   
+         from CB_INFORM_WITHDRAW t  --CB_INFORM_WITHDRAW通知存款支取流水表
+         where
+           T.ciw_STT in('42', '90')
+         and TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171231 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         union all
+         select  t.FFX_CSTNO as 客户号, T.FFX_PAYACC as  账号, t.ffx_tranamt AS 交易金额, FFX_SUBMITTIME AS 交易时间  
+         from CB_FIN_FIXED t  --CB_FIN_FIXED活转定，定转活流水表
+         where T.ffx_STT in('42', '90') 
+         and TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171231 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         union all
+ 
+         select T.TFL_CSTNO as 客户号, BF.BFL_PAYACC as  账号, t.tfl_tranamt AS 交易金额, TFL_SUBMITTIME AS 交易时间  
+         from CB_TRANFLOW t, cb_batch_flow  BF 
+         where TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171231 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+          AND TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         and T.TFL_STT in('42')  --交易成功状态   CB_TRANFLOW 行内、行外单笔转账
+         and TFL_BSNCODE = '10200100'
+         AND T.TFL_BATCHNO = BF.BFL_BATCHNO
+         
+         union all
+         
+         select  wf.wfl_cstno as 客户号, wf.wfl_Payacc as  账号, WDT_AMT AS 交易金额, wf.wfl_submittime AS 交易时间   
+         from CB_WAGE_FLOW wf, CB_WAGE_DETAIL --代发工资
+         where WDT_BATCHNO = WFL_BATCHNO   
+               and TO_DATE (wf.wfl_submittime, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171231 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+               and TO_DATE (wf.wfl_submittime, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+               and WDT_HOSTCODE = '000000'
+        ) tf
+  where ca.网银客户号 = tf.客户号
+);

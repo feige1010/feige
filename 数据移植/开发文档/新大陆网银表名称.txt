@@ -1,0 +1,80 @@
+common和firmbank
+
+T_BANK - 联网行基本信息
+T_CERT-证书登记表
+T_CERT_BIND_ACCT-证书关系绑定表
+T_DICT_ADDRESS 省份城市地址表
+T_DICT_BANK 银行代码表
+T_NATIVE_BANK 人行支付行号
+T_FIRM_DICTIONARY-企业字典定义表(公共数据库)
+T_SEQ_REG-序号注册表
+
+T_FIRM--网上企业信息表
+T_OPERATOR--企业操作员
+T_ACCOUNT-帐户信息表
+T_ACCT_AUDIT-账户业务审核登记表
+T_NET_OPEN_LOG 网银开户日志表
+T_CONTR_ACCT_BIZ-合同业务范围
+T_CONTR_TO_ACCT 合同定向账户
+T_CONTRACT-合同书
+T_MAX_CASHPAY 联网行费用单笔限额配置
+T_AUTH-操作员授权表
+T_AUTH_ACCT -授权书账号表
+T_AUTH_BIZ-业务授权表
+T_AUTH_QUOTA-授权额度
+T_AUTH_ROLE-授权书角色表
+T_BIZFLOW_CFG-企业业务流程配置表
+T_QUOTA_REG_LOG -额度登记日志表
+T_BF_CURRENT_STEP-工作流当前任务
+T_BF_ENTRY-工作流实例
+T_BF_HISTORY_STEP-工作流执行历史
+T_BF_LAST_ASSIGNEE-工作流最后一次指派
+T_CORE_AUDIT 核心审核网银业务表
+T_PAYOFF-发工资指令
+T_PAYOFF_ITEM-工资明细
+T_PURPOSE-用款用途
+T_TIME_DEMAND 企业定活两变理财
+T_TRANSFER-转帐
+T_OPERATION_LOG 操作日志
+
+T_BATCH_TRANSFER 批量转账
+T_BATCH_RUN_LOG 系统批处理日志
+
+T_CHECK_RECEIPT 账户核对对账回执单
+T_RECEIPT_QUERY  回单打印
+T_PAYEE_CATALOG-往来账户分类
+T_USUAL_PAYEE-常用往来帐户
+T_MENU 系统菜单
+T_MENU_CTRL 菜单功能控制表
+T_MENU_LINK 相关功能（连接)登记表
+T_MENU_ROLE 菜单角色关系表
+T_ROLE 系统角色
+T_INNER_CROSS_LIMIT_MONEY 行内行外转账限额
+T_BULLETIN-公告表
+
+
+
+perbank：
+
+
+T_ACCOUNT - 账户基本信息
+T_ACCT_FLOW - 帐户变动流水表
+T_ACCT_FUNC- 帐户功能表
+T_ACCT_FUNC_ATTR - 帐户业务属性表
+T_BULLETIN-公告表
+T_CONTRACT_ACCT-定向转账用户表
+T_CUSNT_ACCT - 往来帐户表
+T_CUSNT_FUNC - 常用功能
+T_CUSTOMER-客户表
+T_DICTIONARY-数据字典
+T_GOLD_FLOW-黄金交易流水表
+T_LOGIN_MODE - 登陆方式
+T_MARKET_INFO-黄金行情信息
+T_MENU - 系统菜单
+T_MENU_CTRL - 菜单功能控制表
+T_MENU_LINK - 相关功能(链接)登记表
+T_NETTRAN_FLOW-网上交易流水表
+T_TRANS_FLOW 转账流水明细信息
+T_TAG 标签表
+T_INNER_CROSS_LIMIT_MONEY 行内行外转账限额
+

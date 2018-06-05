@@ -1,0 +1,536 @@
+  SELECT cip_name AS 姓名,
+         cip_charid AS 登录号,
+         cip_mobile AS 手机号,
+        -- CIP_TELLERNO AS 开户柜员,
+         CASE
+            WHEN cip_channel = '1100' THEN '柜面注册'
+            WHEN cip_channel = '1101' THEN 'PC端自助注册'  
+            ELSE '手机注册'   -- 1201 手机银行
+         END
+            AS 注册平台,
+         to_char(TO_DATE (CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) 开户日期
+    FROM fanshi_bank.pb_cst_inf 
+    where TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <= TO_DATE ('20171130 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+        --and (cip_channel not in('1100', '1101') or cip_channel is null)
+ORDER BY cip_ebanktime desc, cip_channel desc;
+ 
+SELECT cip_name AS 姓名,
+         cip_charid AS 登录号,
+         cip_mobile AS 手机号,
+        -- CIP_TELLERNO AS 开户柜员,
+         CASE
+            WHEN cip_channel = '1100' THEN '柜面注册'
+            WHEN cip_channel = '1101' THEN 'PC端自助注册'  
+            ELSE '手机注册'   -- 1201 手机银行
+         END
+            AS 注册平台,
+         to_char(TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss'),'YYYY-MM-DD hh24:mi:ss') 开户日期
+    FROM lintong_bank.pb_cst_inf 
+    where  TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170831 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+           TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170801 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        --and (cip_channel not in('1100', '1101') or cip_channel is null)
+ORDER BY  cip_channel, cip_ebanktime; 
+ 
+select cst.cif_namecn as 企业名称, cst.cif_phone as 联系电话, to_char(TO_DATE ( CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) 开户日期
+from cb_cst_inf cst
+order by CIF_OPENTIME desc;
+ 
+  --查询个个人网银未开通人数
+  SELECT  app.*
+    FROM pb_cst_inf cst , PB_CST_APP app
+    where TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <= TO_DATE ('20170630 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+          TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'YYYY-MM-DD hh24:mi:ss') AND
+          cst.cip_cstno = app.pca_cstno and
+          app.pca_appid in('1101') ;
+		  
+		  
+		  
+  
+  SELECT count(cst.cip_cstno)
+    FROM pb_cst_inf cst , PB_CST_APP app
+    where --TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <= TO_DATE ('20170630 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+         -- TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') >= TO_DATE ('20170401 00:00:00', 'YYYY-MM-DD hh24:mi:ss') AND
+          cst.cip_cstno = app.pca_cstno and
+          app.pca_appid in('1101') ;
+          
+   SELECT count(cst.cip_cstno)
+    FROM pb_cst_inf cst
+    where TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <= TO_DATE ('20170630 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+          TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') >= TO_DATE ('20170401 00:00:00', 'YYYY-MM-DD hh24:mi:ss')
+ 
+ 
+ --中宁导数 十月份开户用户在十月份交易数据
+   select ca.*, tf.nm as 交易笔数, tf.trf_tranamt as 交易金额
+   from (SELECT ACC.AIF_OPENNODE AS 机构,
+                ACC.AIF_ACCNO as 账号,
+                CST.CIP_NAME as 户名,
+                CST.Cip_Mobile as 手机号,
+                to_char(TO_DATE (CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                CST.CIP_CSTNO
+           FROM zhongning_bank.PB_CST_INF CST, zhongning_bank.PB_ACC_INF ACC
+          WHERE CST.CIP_CSTNO = ACC.AIF_CSTNO
+            AND CST.CIP_STT = '0'
+            AND CST.CIP_CIFNO IS NOT NULL
+            AND TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+            TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20171001 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+            ) ca,
+        (select trans.trf_cstno,
+                trans.trf_payacc,
+                count(trans.trf_flowno) as nm,
+                sum(trans.trf_tranamt) as trf_tranamt
+           from zhongning_bank.pb_tran_flow trans
+          where trans.trf_result = '90' and
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20171001 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+          group by trans.trf_cstno, trans.trf_payacc) tf
+  where ca.CIP_CSTNO = tf.trf_cstno(+)
+    and ca.账号 = tf.trf_payacc(+)
+  order by ca.开户时间 desc;
+
+  --中宁导数 所有开户用户在十月份交易数据
+     select ca.*, tf.nm as 交易笔数, tf.trf_tranamt as 交易金额
+   from (SELECT ACC.AIF_OPENNODE AS 机构,
+                ACC.AIF_ACCNO as 账号,
+                CST.CIP_NAME as 户名,
+                CST.Cip_Mobile as 手机号,
+                to_char(TO_DATE (CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                CST.CIP_CSTNO
+           FROM zhongning_bank.PB_CST_INF CST, zhongning_bank.PB_ACC_INF ACC
+          WHERE CST.CIP_CSTNO = ACC.AIF_CSTNO
+            AND CST.CIP_STT = '0'
+            AND CST.CIP_CIFNO IS NOT NULL
+            ) ca,
+        (select trans.trf_cstno,
+                trans.trf_payacc,
+                count(trans.trf_flowno) as nm,
+                sum(trans.trf_tranamt) as trf_tranamt
+           from zhongning_bank.pb_tran_flow trans
+          where trans.trf_result = '90' and
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20171001 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+          group by trans.trf_cstno, trans.trf_payacc) tf
+  where ca.CIP_CSTNO = tf.trf_cstno(+)
+    and ca.账号 = tf.trf_payacc(+)
+  order by ca.开户时间 desc;
+
+SELECT CIP_MOBILE AS 手机号,
+       CIP_NAME,
+       TO_DATE(cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') as 注册日期
+  FROM PB_CST_INF
+order by CIP_NAME, cip_ebanktime desc;
+
+
+-----------中宁所有用户手机银行11月交易明细------------
+  select ca.*, nvl(tf.nm,0) as 交易笔数, nvl(tf.trf_tranamt,0) as 交易金额
+   from (SELECT ACC.AIF_OPENNODE AS 机构,
+                ACC.AIF_ACCNO as 账号,
+                CST.CIP_NAME as 户名,
+                CST.Cip_Mobile as 手机号,
+                to_char(TO_DATE (CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                CST.CIP_CSTNO
+           FROM zhongning_bank.PB_CST_INF CST, zhongning_bank.PB_ACC_INF ACC
+          WHERE CST.CIP_CSTNO = ACC.AIF_CSTNO
+            AND CST.CIP_STT = '0'
+            AND CST.CIP_CIFNO IS NOT NULL
+            ) ca,
+        (select trans.trf_cstno,
+                trans.trf_payacc,
+                count(trans.trf_flowno) as nm,
+                sum(trans.trf_tranamt) as trf_tranamt
+           from zhongning_bank.pb_tran_flow trans
+          where trans.trf_result = '90' and
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171130 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20171101 00:00:00', 'yyyy-mm-dd hh24:mi:ss') AND
+            TRF_APPID = '1201'
+          group by trans.trf_cstno, trans.trf_payacc) tf
+  where ca.CIP_CSTNO = tf.trf_cstno(+)
+    and ca.账号 = tf.trf_payacc(+)
+  order by ca.开户时间 desc;
+
+
+--山东沂南 
+ select 核心客户号,网银客户号,客户姓名,账号, 开户时间, tf.nm as 交易笔数, tf.trf_tranamt as 交易金额
+   from (SELECT ACC.AIF_OPENNODE AS 机构,
+                ACC.AIF_ACCNO as 账号,
+                CST.CIP_NAME as 客户姓名,
+                CST.Cip_Mobile as 手机号,
+                to_char(TO_DATE (CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                CST.CIP_CSTNO as 网银客户号,
+                CST.CIP_CIFNO as 核心客户号
+           FROM YINAN_BANK.PB_CST_INF CST, YINAN_BANK.PB_ACC_INF ACC
+          WHERE CST.CIP_CSTNO = ACC.AIF_CSTNO
+            AND CST.CIP_STT = '0'
+            AND CST.CIP_CIFNO IS NOT NULL
+            AND TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+            TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20171001 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+            ) ca,
+        (select trans.trf_cstno,
+                trans.trf_payacc,
+                count(trans.trf_flowno) as nm,
+                sum(trans.trf_tranamt) as trf_tranamt
+           from YINAN_BANK.pb_tran_flow trans
+          where trans.trf_result = '90' and
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+            TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20171001 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+          group by trans.trf_cstno, trans.trf_payacc) tf
+  where ca.网银客户号 = tf.trf_cstno(+)
+    and ca.账号 = tf.trf_payacc(+)
+  order by ca.开户时间 desc;
+
+
+ select 核心客户号,网银客户号,客户姓名,ca.账号, 开户时间,  交易笔数, 交易金额
+   from (SELECT ACC.AIF_OPENNODE AS 机构,
+                ACC.AIF_ACCNO as 账号,
+                CST.CIF_NAMECN as 客户姓名,
+                CST.CIF_MOBILE as 手机号,
+                to_char(TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 开户时间,
+                CST.CIF_CSTNO as 网银客户号,
+                CST.CIF_HOSTNO as 核心客户号
+           FROM YINAN_BANK.CB_CST_INF CST, YINAN_BANK.CB_ACC_INF ACC
+          WHERE CST.CIF_CSTNO = ACC.AIF_CSTNO
+            AND CST.CIF_STT = '0'
+            AND CST.CIF_HOSTNO IS NOT NULL
+            AND TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170831 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+            TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170701 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+            ) ca,
+        (
+         select 客户号, 账号, sum(交易笔数) as 交易笔数, SUM (交易金额) AS 交易金额 from(
+         select T.TFL_CSTNO as 客户号, T.TFL_PAYACC as  账号, count(t.tfl_flowno) as 交易笔数, SUM (t.tfl_tranamt) AS 交易金额 from YINAN_BANK.CB_TRANFLOW t
+         where TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170831 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+          AND TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170701 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         and T.TFL_STT in('90', '42')
+         group by T.TFL_CSTNO, T.TFL_PAYACC
+         union all
+         select t.IDO_CSTNO as 客户号, T.IDO_PAYNO as  账号, count(T.IDO_FLOWNO) as 交易笔数,SUM (t.ido_amount) AS 交易金额   from YINAN_BANK.CB_INFORM_DEPOSIT_OPEN t
+         where T.IDO_STT in('42', '90')
+         and TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170831 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170701 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         group by t.IDO_CSTNO, T.IDO_PAYNO
+         union all
+         select t.ciw_cstno as 客户号, T.ciw_PAYNO as  账号, count(T.ciw_FLOWNO) as 交易笔数,SUM (t.ciw_amount) AS 交易金额  from YINAN_BANK.CB_INFORM_WITHDRAW t 
+         where
+           T.ciw_STT in('42', '90')
+         and TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170831 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170701 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         group by t.ciw_cstno, T.ciw_PAYNO
+         union all
+         select  t.FFX_CSTNO as 客户号, T.FFX_PAYACC as  账号, count(T.ffx_FLOWNO) as 交易笔数,SUM (t.ffx_amount) AS 交易金额   from YINAN_BANK.CB_FIN_FIXED t
+         where T.ffx_STT in('42', '90') 
+         and TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170831 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170701 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         group by t.FFX_CSTNO, T.FFX_PAYACC) t2
+         group by 客户号, 账号) tf
+  where ca.网银客户号 = tf.客户号(+)
+    and ca.账号 = tf.账号(+)
+  order by ca.开户时间 desc;
+
+
+ 
+
+--企业客户数
+ select count(*)  from dfls_bank.CB_CST_INF
+ where  TO_DATE (cif_opentime, 'yyyy-mm-dd hh24:mi:ss') <=
+              TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+       AND TO_DATE (cif_opentime, 'yyyy-mm-dd hh24:mi:ss') >=
+              TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss');
+
+
+select sum(交易数量) as 交易数量, SUM(交易金额) as 交易金额 from 
+(
+ select count(t.tfl_flowno) as 交易数量, SUM (t.tfl_tranamt) AS 交易金额 from XIAOYI_BANK.CB_TRANFLOW t where T.TFL_SUBMITTIME > '20170101000000'
+ and T.TFL_CSTNO in(select  T2.CIF_CSTNO from XIAOYI_BANK.CB_CST_INF t2)
+ and T.TFL_STT in('90', '42')
+ union all
+ select count(T.IDO_FLOWNO) as 交易数量,SUM (t.ido_amount) AS 交易金额   from XIAOYI_BANK.CB_INFORM_DEPOSIT_OPEN t
+ where T.IDO_CSTNO in(select  T2.CIF_CSTNO from XIAOYI_BANK.CB_CST_INF t2) and T.IDO_STT in('42')
+ union all
+ select  count(T.ciw_FLOWNO) as 交易数量,SUM (t.ciw_amount) AS 交易金额  from XIAOYI_BANK.CB_INFORM_WITHDRAW t where T.ciw_CSTNO in(select  T2.CIF_CSTNO from XIAOYI_BANK.CB_CST_INF t2)
+ and T.ciw_STT in('42', '90')
+ union all
+ select count(T.ffx_FLOWNO) as 交易数量,SUM (t.ffx_amount) AS 交易金额   from XIAOYI_BANK.CB_FIN_FIXED t
+ where T.ffx_CSTNO in(select  T2.CIF_CSTNO from XIAOYI_BANK.CB_CST_INF t2) and T.ffx_STT in('42', '90'));
+          
+
+
+----卢氏个人客户签约明细
+
+
+ select CST.CIP_NAME as 客户名称, CST.CIP_MOBILE as 客户手机号,
+      (case 
+       when CERT.PCI_MEDIUMTYPE = '3'  then '手机动态码'
+       when CERT.PCI_MEDIUMTYPE = '0'  then 'UKEY'
+     end) as 认证方式,
+     CERT.PCI_CERTID as 认证方式编号, 
+     to_char(TO_DATE (CERT.PCI_REGISTTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) as 签约时间
+ from dfls_bank.pb_cst_inf cst, DFLS_BANK.PB_CERT_INF cert
+ where CST.CIP_CSTNO = CERT.PCI_CSTNO
+ order by  CERT.PCI_MEDIUMTYPE,CERT.PCI_REGISTTIME
+ 
+ 
+ 
+  --1月1日至10月31日开通个人网银开户数	
+  SELECT  count(cst.cip_cstno)
+    FROM pyyc_bank.pb_cst_inf cst 
+    where TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') and
+          TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'YYYY-MM-DD hh24:mi:ss') and
+    cst.cip_cstno not in(select app.pca_cstno from pyyc_bank.PB_CST_APP app where app.pca_appid in('1101'));
+	
+ ----1月1日至10月31日开通手机银行开户数	
+  SELECT  count(cst.cip_cstno)
+    FROM pyyc_bank.pb_cst_inf cst 
+    where TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') and
+          TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') >= TO_DATE ('20170101 00:00:00', 'YYYY-MM-DD hh24:mi:ss') and
+    cst.cip_cstno not in(select app.pca_cstno from pyyc_bank.PB_CST_APP app where app.pca_appid in('1201'));
+	
+	
+ 
+----按渠道区分交易笔数和交易金额
+select   (case 
+             when TRF_APPID = '1101' then '个人网银'
+             when TRF_APPID = '1201' then '手机银行'
+         end) 渠道,
+         SUM (TRF_TRANAMT) AS 交易金额,
+         COUNT (*) 交易数量 
+from fanshi_bank.PB_TRAN_FLOW t 
+where T.TRF_RESULT = '90'
+    AND TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <=
+          TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+    AND TO_DATE (TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >=
+          TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+    AND T.TRF_CSTNO IN(SELECT CST.CIP_CSTNO FROM fanshi_bank.PB_CST_INF CST)
+group by T.TRF_APPID;
+
+--企业客户数
+ select count(*)  from dfls_bank.CB_CST_INF
+ where  TO_DATE (cif_opentime, 'yyyy-mm-dd hh24:mi:ss') <=
+              TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+       AND TO_DATE (cif_opentime, 'yyyy-mm-dd hh24:mi:ss') >=
+              TO_DATE ('20170101 00:00:00', 'yyyy-mm-dd hh24:mi:ss');
+
+--企业交易笔数和金额
+ select   sum(交易笔数) as 交易笔数, SUM (交易金额) AS 交易金额 from(
+         select T.TFL_CSTNO as 客户号, T.TFL_PAYACC as  账号, count(t.tfl_flowno) as 交易笔数, SUM (t.tfl_tranamt) AS 交易金额 from FANSHI_BANK.CB_TRANFLOW t
+         where TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+          AND TO_DATE (T.TFL_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         and T.TFL_STT in('90', '42')
+         and T.TFL_CSTNO in(select  T2.CIF_CSTNO from FANSHI_BANK.CB_CST_INF t2)
+         group by T.TFL_CSTNO, T.TFL_PAYACC
+         union all
+         select t.IDO_CSTNO as 客户号, T.IDO_PAYNO as  账号, count(T.IDO_FLOWNO) as 交易笔数,SUM (t.ido_amount) AS 交易金额   from FANSHI_BANK.CB_INFORM_DEPOSIT_OPEN t
+         where T.IDO_STT in('42', '90')
+         and TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.IDO_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         AND IDO_CSTNO in(select T2.CIF_CSTNO from FANSHI_BANK.CB_CST_INF t2)
+         group by t.IDO_CSTNO, T.IDO_PAYNO
+         union all
+         select t.ciw_cstno as 客户号, T.ciw_PAYNO as  账号, count(T.ciw_FLOWNO) as 交易笔数,SUM (t.ciw_amount) AS 交易金额  from FANSHI_BANK.CB_INFORM_WITHDRAW t 
+         where
+           T.ciw_STT in('42', '90')
+         and TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.CIW_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         AND ciw_CSTNO in(select  T2.CIF_CSTNO from FANSHI_BANK.CB_CST_INF t2)
+         group by t.ciw_cstno, T.ciw_PAYNO
+         union all
+         select  t.FFX_CSTNO as 客户号, T.FFX_PAYACC as  账号, count(T.ffx_FLOWNO) as 交易笔数,SUM (t.ffx_amount) AS 交易金额   from FANSHI_BANK.CB_FIN_FIXED t
+         where T.ffx_STT in('42', '90') 
+         and TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss') 
+         AND TO_DATE (T.FFX_SUBMITTIME, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+         AND ffx_CSTNO in(select  T2.CIF_CSTNO from FANSHI_BANK.CB_CST_INF t2)
+         group by t.FFX_CSTNO, T.FFX_PAYACC
+         ) t2;
+		 
+		 
+--------西平导数 只适用西平法人
+/* Formatted on 2017/11/3 17:15:38 (QP5 v5.256.13226.35510) */
+--统计当期和往期个人网银和手机银行客户数
+  SELECT branch AS 机构编号,
+         brc.BRH_NAME as 机构名称,
+         (CASE
+             WHEN PCI_MEDIUMTYPE = '0' THEN '个人网上银行'
+             WHEN PCI_MEDIUMTYPE = '3' THEN '手机银行'
+          END)
+            AS 渠道,
+         SUM (
+            CASE
+               WHEN (    TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <=
+                            TO_DATE ('20171031 23:59:59',
+                                     'YYYY-MM-DD hh24:mi:ss')
+                     AND TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') >=
+                            TO_DATE ('20171001 00:00:00',
+                                     'YYYY-MM-DD hh24:mi:ss'))
+               THEN
+                  1
+               ELSE
+                  0
+            END)
+            AS 本期新增用户数,
+         SUM (
+            CASE
+               WHEN (TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <=
+                        TO_DATE ('20170930 23:59:59', 'YYYY-MM-DD hh24:mi:ss'))
+               THEN
+                  1
+               ELSE
+                  0
+            END)
+            AS 存量户数
+    FROM (SELECT cst.CIP_CSTNO,
+                 CST.CIP_EBANKTIME,
+                 --CST.CIP_EBANKNODE,
+                 --cert.pci_registnode,
+                 (CASE
+                     WHEN CST.CIP_EBANKNODE = '0100' THEN cert.pci_registnode
+                     ELSE CST.CIP_EBANKNODE
+                  END)
+                    AS branch,
+                 CERT.PCI_MEDIUMTYPE
+            FROM xiping_bank.pb_cst_inf cst, XIPING_BANK.PB_CERT_INF cert
+           WHERE CST.CIP_CSTNO = CERT.PCI_CSTNO) cstinf,
+           xiping_bank.im_branch brc
+ where cstinf.branch = brc.BRH_ID
+GROUP BY branch, PCI_MEDIUMTYPE, brc.BRH_NAME
+ORDER BY branch DESC;
+
+
+SELECT branch AS 机构编号,
+         brc.BRH_NAME as 机构名称,
+         (CASE
+             WHEN PCI_MEDIUMTYPE = '0' THEN '个人网上银行'
+             WHEN PCI_MEDIUMTYPE = '4' THEN '企业网银'
+             WHEN PCI_MEDIUMTYPE = '3' THEN '手机银行'
+             WHEN PCI_MEDIUMTYPE = '2' THEN '微信银行'
+          END)
+            AS 渠道,
+         SUM (
+            CASE
+               WHEN (    TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <=
+                            TO_DATE ('20171031 23:59:59',
+                                     'YYYY-MM-DD hh24:mi:ss')
+                     AND TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') >=
+                            TO_DATE ('20171001 00:00:00',
+                                     'YYYY-MM-DD hh24:mi:ss'))
+               THEN
+                  1
+               ELSE
+                  0
+            END)
+            AS 本期新增用户数,
+         SUM (
+            CASE
+               WHEN (TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss') <=
+                        TO_DATE ('20171227 23:59:59', 'YYYY-MM-DD hh24:mi:ss'))
+               THEN
+                  1
+               ELSE
+                  0
+            END)
+            AS 存量户数
+    FROM (SELECT cst.CIP_CSTNO,
+                 CST.CIP_EBANKTIME,
+                 (CASE
+                     WHEN CST.CIP_EBANKNODE = '0100' THEN cert.pci_registnode
+                     ELSE CST.CIP_EBANKNODE
+                  END)
+                    AS branch,
+                 CERT.PCI_MEDIUMTYPE
+            FROM xiping_bank.pb_cst_inf cst, XIPING_BANK.PB_CERT_INF cert
+           WHERE CST.CIP_CSTNO = CERT.PCI_CSTNO
+           union 
+            select cst.CIP_CSTNO,
+                   CST.CIP_EBANKTIME,
+                   CST.CIP_EBANKNODE,
+                   '2' as PCI_MEDIUMTYPE
+            from xiping_bank.pb_cst_inf cst, 
+                 XIPING_BANK.PB_ACC_INF acct,
+                 FANSHI_WXBANK.WX_USER usr,
+                 FANSHI_WXBANK.WX_BINDING wx
+            where ACCT.AIF_CSTNO = CST.CIP_CSTNO and
+                  WX.WBG_CARDNUM = ACCT.AIF_ACCNO and
+                  USR.WUR_FAKE_ID  = WX.WBG_FAKE_ID and 
+                  USR.WUR_PLATFORM_FAKE_ID = 'gh_77748f36eb3e'
+           union
+            select 
+            CST.CIF_CSTNO,
+            CST.cif_opentime,
+            CST.CIF_EBANKNODE,
+            '4' as PCI_MEDIUMTYPE
+            from 
+            xiping_bank.CB_CST_INF cst
+           ) cstinf,
+           xiping_bank.im_branch brc
+ where cstinf.branch = brc.BRH_ID
+GROUP BY branch, PCI_MEDIUMTYPE, brc.BRH_NAME
+ORDER BY branch DESC;
+
+
+--自助注册未作签约人数 
+/* Formatted on 2017/11/3 17:43:53 (QP5 v5.256.13226.35510) */
+SELECT COUNT (*)
+  FROM xiping_bank.pb_cst_inf cst
+ WHERE     CST.CIP_EBANKNODE = '0100'
+       AND cst.CIP_CSTNO NOT IN (SELECT PCI_CSTNO
+                                   FROM XIPING_BANK.PB_CERT_INF cert);
+								   
+--按机构统计企业开户数					   
+select BRH_ID,brc.BRH_NAME, count(cst.CIF_cstno) from 
+CB_CST_INF cst,
+im_branch brc
+where CST.CIF_EBANKNODE = brc.BRH_ID
+GROUP BY BRH_ID, brc.BRH_NAME
+ORDER BY BRH_ID DESC;	 
+
+--------------------临潼开户导数-------------------------------------
+--企业
+/* Formatted on 2017/11/14 16:52:33 (QP5 v5.256.13226.35510) */
+SELECT CST.CIF_HOSTNO AS 核心客户号,
+       cst.cif_namecn AS 企业名称,
+       cst.cif_phone AS 联系电话
+  FROM lintong_bank.cb_cst_inf cst
+ WHERE     CST.CIF_HOSTNO IS NOT NULL
+       AND TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss') <=
+              TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+       AND TO_DATE (CST.CIF_OPENTIME, 'yyyy-mm-dd hh24:mi:ss') >=
+              TO_DATE ('20171001 00:00:00', 'yyyy-mm-dd hh24:mi:ss');
+--个人
+
+SELECT   CIP_CIFNO as 核心客户号,
+         cip_name AS 姓名,
+         cip_charid AS 登录号,
+         cip_mobile AS 手机号,
+        -- CIP_TELLERNO AS 开户柜员,
+         CASE
+            WHEN cip_channel = '1100' THEN '柜面注册'
+            WHEN cip_channel = '1101' THEN 'PC端自助注册'  
+            ELSE '手机注册'   -- 1201 手机银行
+         END
+            AS 注册平台,
+         to_char(TO_DATE (cip_ebanktime, 'YYYY-MM-DD hh24:mi:ss'),'YYYY-MM-DD hh24:mi:ss') 开户日期
+    FROM lintong_bank.pb_cst_inf 
+    where  TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') <= TO_DATE ('20171031 23:59:59', 'YYYY-MM-DD hh24:mi:ss') AND
+           TO_DATE (cip_ebanktime, 'yyyy-mm-dd hh24:mi:ss') >= TO_DATE ('20171001 00:00:00', 'yyyy-mm-dd hh24:mi:ss') and
+        --and (cip_channel not in('1100', '1101') or cip_channel is null)
+           CIP_CIFNO is not null
+ORDER BY  cip_channel, cip_ebanktime; 
+
+-------------------统计手机银行使用数量----------------------------------------------
+SELECT COUNT(*)
+  FROM (SELECT DISTINCT CST.CIP_CSTNO
+          FROM PB_CST_INF CST
+         WHERE CST.CIP_CHANNEL = '1201'
+        UNION
+        SELECT DISTINCT FLOW.TRF_CSTNO
+          FROM PB_TRAN_FLOW FLOW
+         WHERE FLOW.TRF_APPID = '1201');
+		 
+---------------------------统计手机银行用户明细--------------------------------------------------
+SELECT t2.CIP_CSTNO as 网银客户号, t2.CIP_NAME as 客户名称,t2.cip_mobile AS 手机号, to_char(TO_DATE (t2.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),'yyyy-mm-dd hh24:mi:ss' ) 开户日期
+  FROM (SELECT DISTINCT CST.CIP_CSTNO
+          FROM PB_CST_INF CST
+         WHERE CST.CIP_CHANNEL = '1201'
+        UNION
+        SELECT DISTINCT FLOW.TRF_CSTNO
+          FROM PB_TRAN_FLOW FLOW
+         WHERE FLOW.TRF_APPID = '1201') t1,
+       PB_CST_INF t2
+where t1.CIP_CSTNO = t2.CIP_CSTNO
+ORDER BY cip_ebanktime desc;		 

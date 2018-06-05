@@ -1,0 +1,193 @@
+-------------------修正人网银交易明细查询------------------------
+select 机构,
+       客户姓名,
+       trf_payacc as 账号,
+       开户时间,
+       tf.trf_tranamt as 交易金额,
+       to_char(TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss'),
+               'yyyy-mm-dd hh24:mi:ss') as 交易时间,
+       (case when appid = '1201' then '手机银行' else '个人网银' end) as 交易渠道,
+       (select BSN.BDF_NAME from ALSZQ_BANK.PB_BSNDEF bsn where bsn.bdf_bsncode = BSNCODE) as 交易类型
+  from (SELECT CST.CIP_EBANKNODE as 机构,
+               CST.CIP_NAME as 客户姓名,
+               CST.Cip_Mobile as 手机号,
+               to_char(TO_DATE(CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),
+                       'yyyy-mm-dd hh24:mi:ss') as 开户时间,
+               CST.CIP_CSTNO as 网银客户号,
+               CST.CIP_CIFNO as 核心客户号
+          FROM PB_CST_INF CST
+         WHERE CST.CIP_CIFNO IS NOT NULL
+         union
+         SELECT
+           CST.CIP_EBANKNODE as 机构,
+           CST.CIP_NAME as 客户姓名,
+           CST.Cip_Mobile as 手机号,
+           to_char(TO_DATE(CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),
+                   'yyyy-mm-dd hh24:mi:ss') as 开户时间,
+           CST.CIP_CSTNO as 网银客户号,
+           CST.CIP_CIFNO as 核心客户号
+        FROM PB_CST_INF_HIS CST
+        WHERE CST.CIP_CIFNO IS NOT NULL and CST.CIP_OPTYPE = '20000402'
+        ) ca,
+       (select trans.trf_cstno,
+               trans.trf_payacc,
+               trans.trf_tranamt as trf_tranamt,
+               trans.TRF_SUBTIME,
+               trans.trf_appid as appid,
+               trans.TRF_BSNCODE as BSNCODE
+          from pb_tran_flow trans --行内、跨行、活转定、定转活、通知存款开立、通知存款支取
+         where trans.trf_result = '90'
+           and TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <=
+               TO_DATE('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+           AND TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >=
+               TO_DATE('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        union all
+    select 
+       btc.pbi_cstno,
+       btc.pbi_accno,
+       TR.PTR_TRANAMT AS trf_tranamt,
+       PBI_TRANDATE,
+       '1101' as appid,
+       '00300800'as BSNCODE
+           from 
+           PB_TRANSFER tr,
+           pb_batch_inf btc
+           where PTR_STT='90'
+             and PTR_BATCHNO is not null
+             and tr.PTR_BATCHNO = btc.PBI_BATCHNO
+             and TO_DATE(PBI_TRANDATE, 'yyyy-mm-dd hh24:mi:ss') <=
+               TO_DATE('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+           AND TO_DATE(PBI_TRANDATE, 'yyyy-mm-dd hh24:mi:ss') >=
+               TO_DATE('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')) tf
+ where ca.网银客户号 = tf.trf_cstno
+ order by TRF_SUBTIME desc; 
+ 
+
+ 
+-------------------个人交易按渠道区分 汇总查询-----------------------
+select (case when appid = '1201' then '手机银行' else '个人网银' end) as 交易渠道, count(*) as 交易笔数, nvl(sum(交易金额),0) as 交易金额 
+from(
+ select 机构,
+       客户姓名,
+       trf_payacc as 账号,
+       开户时间,
+       tf.trf_tranamt as 交易金额,
+       to_char(TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss'),
+               'yyyy-mm-dd hh24:mi:ss') as 交易时间,
+       appid
+  from (SELECT CST.CIP_EBANKNODE as 机构,
+               CST.CIP_NAME as 客户姓名,
+               CST.Cip_Mobile as 手机号,
+               to_char(TO_DATE(CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),
+                       'yyyy-mm-dd hh24:mi:ss') as 开户时间,
+               CST.CIP_CSTNO as 网银客户号,
+               CST.CIP_CIFNO as 核心客户号
+          FROM PB_CST_INF CST
+         WHERE CST.CIP_CIFNO IS NOT NULL
+         union
+         SELECT
+           CST.CIP_EBANKNODE as 机构,
+           CST.CIP_NAME as 客户姓名,
+           CST.Cip_Mobile as 手机号,
+           to_char(TO_DATE(CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),
+                   'yyyy-mm-dd hh24:mi:ss') as 开户时间,
+           CST.CIP_CSTNO as 网银客户号,
+           CST.CIP_CIFNO as 核心客户号
+        FROM PB_CST_INF_HIS CST
+        WHERE CST.CIP_CIFNO IS NOT NULL and CST.CIP_OPTYPE = '20000402'
+        ) ca,
+       (select trans.trf_cstno,
+               trans.trf_payacc,
+               trans.trf_tranamt as trf_tranamt,
+               trans.TRF_SUBTIME,
+               trans.trf_appid as appid
+          from pb_tran_flow trans --行内、跨行、活转定、定转活、通知存款开立、通知存款支取
+         where trans.trf_result = '90'
+           and TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <=
+               TO_DATE('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+           AND TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >=
+               TO_DATE('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        union all
+    select 
+       btc.pbi_cstno,
+       btc.pbi_accno,
+       TR.PTR_TRANAMT AS trf_tranamt,
+       PBI_TRANDATE,
+       '1101' as appid
+           from 
+           PB_TRANSFER tr,
+           pb_batch_inf btc
+           where PTR_STT='90'
+             and PTR_BATCHNO is not null
+             and tr.PTR_BATCHNO = btc.PBI_BATCHNO
+             and TO_DATE(PBI_TRANDATE, 'yyyy-mm-dd hh24:mi:ss') <=
+               TO_DATE('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+           AND TO_DATE(PBI_TRANDATE, 'yyyy-mm-dd hh24:mi:ss') >=
+               TO_DATE('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')) tf
+ where ca.网银客户号 = tf.trf_cstno
+)
+group by appid;
+
+ 
+ 
+--------------------------修订按机构汇总查询--------------------------------
+select 机构 as 机构号, (select BR.BRH_NAME from im_branch br where BR.BRH_ID = 机构) as 机构名称, count(机构) as 交易笔数, sum(nvl(交易金额, 0)) as 交易金额
+ from(
+  select 机构,
+       客户姓名,
+       trf_payacc as 账号,
+       开户时间,
+       tf.trf_tranamt as 交易金额,
+       to_char(TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss'),
+               'yyyy-mm-dd hh24:mi:ss') as 交易时间
+  from (SELECT CST.CIP_EBANKNODE as 机构,
+               CST.CIP_NAME as 客户姓名,
+               CST.Cip_Mobile as 手机号,
+               to_char(TO_DATE(CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),
+                       'yyyy-mm-dd hh24:mi:ss') as 开户时间,
+               CST.CIP_CSTNO as 网银客户号,
+               CST.CIP_CIFNO as 核心客户号
+          FROM PB_CST_INF CST
+         WHERE CST.CIP_CIFNO IS NOT NULL
+         union
+         SELECT
+           CST.CIP_EBANKNODE as 机构,
+           CST.CIP_NAME as 客户姓名,
+           CST.Cip_Mobile as 手机号,
+           to_char(TO_DATE(CST.CIP_EBANKTIME, 'yyyy-mm-dd hh24:mi:ss'),
+                   'yyyy-mm-dd hh24:mi:ss') as 开户时间,
+           CST.CIP_CSTNO as 网银客户号,
+           CST.CIP_CIFNO as 核心客户号
+        FROM PB_CST_INF_HIS CST
+        WHERE CST.CIP_CIFNO IS NOT NULL and CST.CIP_OPTYPE = '20000402'
+        ) ca,
+       (select trans.trf_cstno,
+               trans.trf_payacc,
+               trans.trf_tranamt as trf_tranamt,
+               trans.TRF_SUBTIME
+          from pb_tran_flow trans --行内、跨行、活转定、定转活、通知存款开立、通知存款支取
+         where trans.trf_result = '90'
+           and TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') <=
+               TO_DATE('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+           AND TO_DATE(TRF_SUBTIME, 'yyyy-mm-dd hh24:mi:ss') >=
+               TO_DATE('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')
+        union all
+		select 
+		   btc.pbi_cstno,
+		   btc.pbi_accno,
+		   TR.PTR_TRANAMT AS trf_tranamt,
+		   PBI_TRANDATE
+           from 
+           PB_TRANSFER tr,
+           pb_batch_inf btc
+           where PTR_STT='90'
+             and PTR_BATCHNO is not null
+             and tr.PTR_BATCHNO = btc.PBI_BATCHNO
+             and TO_DATE(PBI_TRANDATE, 'yyyy-mm-dd hh24:mi:ss') <=
+               TO_DATE('20180228 23:59:59', 'YYYY-MM-DD hh24:mi:ss')
+           AND TO_DATE(PBI_TRANDATE, 'yyyy-mm-dd hh24:mi:ss') >=
+               TO_DATE('20170601 00:00:00', 'yyyy-mm-dd hh24:mi:ss')) tf
+ where ca.网银客户号 = tf.trf_cstno
+)
+ group by 机构
+ order by 机构;

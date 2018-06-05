@@ -1,0 +1,81 @@
+-- 创建宇信数据库用户
+--drop user MINQINGV1_BANK cascade;
+create user MINQINGV1_BANK
+  identified by MINQINGV1_BANK
+  default tablespace USERS
+  temporary tablespace TEMP
+  profile DEFAULT;
+-- Grant/Revoke role privileges 
+grant connect to MINQINGV1_BANK;
+grant dba to MINQINGV1_BANK;
+-- Grant/Revoke system privileges 
+grant select any table to MINQINGV1_BANK;
+grant unlimited tablespace to MINQINGV1_BANK;
+
+
+-- 创建新大陆企业银行数据用户
+--drop user FIRMBANK_MINQING cascade;
+create user FIRMBANK_MINQING
+  identified by ebank
+  default tablespace USERS
+  temporary tablespace TEMP
+  profile DEFAULT;
+-- Grant/Revoke role privileges 
+grant connect to FIRMBANK_MINQING;
+grant dba to FIRMBANK_MINQING;
+-- Grant/Revoke system privileges 
+grant unlimited tablespace to FIRMBANK_MINQING;
+
+
+-- 创建新大陆个人银行数据用户
+--drop user PERBANK_MINQING cascade;
+create user PERBANK_MINQING
+  identified by ebank
+  default tablespace USERS
+  temporary tablespace TEMP
+  profile DEFAULT;
+-- Grant/Revoke role privileges 
+grant connect to PERBANK_MINQING;
+grant dba to PERBANK_MINQING;
+-- Grant/Revoke system privileges 
+grant unlimited tablespace to PERBANK_MINQING;
+
+-- 创建新大陆公用数据用户
+--drop user COMM_MINQING cascade;
+create user COMM_MINQING
+  identified by ebank
+  default tablespace USERS
+  temporary tablespace TEMP
+  profile DEFAULT;
+-- Grant/Revoke role privileges 
+grant connect to COMM_MINQING;
+grant dba to COMM_MINQING;
+-- Grant/Revoke system privileges 
+grant unlimited tablespace to COMM_MINQING;
+
+
+--------------------------------------------
+
+drop user PERBANK_MINQING cascade;
+drop user FIRMBANK_MINQING cascade;
+
+create tablespace PERBANK_MINQING logging datafile '/soft/u01/app/oracle/oradata/EBANK/datafile/PERBANK_MINQING.dbf' size 256m autoextend on next 20m maxsize  unlimited extent management local;
+create temporary tablespace PERBANK_MINQING_TEMP tempfile'/soft/u01/app/oracle/oradata/EBANK/datafile/PERBANK_MINQING_TEMP.dbf' size 256m autoextend on next 20m maxsize unlimited extent management local;
+create user PERBANK_MINQING identified by PERBANK_MINQING default tablespace PERBANK_MINQING temporary tablespace PERBANK_MINQING_TEMP PROFILE DEFAULT ACCOUNT UNLOCK;
+GRANT connect,resource to PERBANK_MINQING;
+
+create tablespace FIRMBANK_MINQING logging datafile '/soft/u01/app/oracle/oradata/EBANK/datafile/FIRMBANK_MINQING.dbf' size 256m autoextend on next 20m maxsize  unlimited extent management local;
+create temporary tablespace FIRMBANK_MINQING_TEMP tempfile'/soft/u01/app/oracle/oradata/EBANK/datafile/FIRMBANK_MINQING_TEMP.dbf' size 256m autoextend on next 20m maxsize unlimited extent management local;
+create user FIRMBANK_MINQING identified by FIRMBANK_MINQING default tablespace FIRMBANK_MINQING temporary tablespace FIRMBANK_MINQING_TEMP PROFILE DEFAULT ACCOUNT UNLOCK;
+GRANT connect,resource to FIRMBANK_MINQING;
+
+exp MQRSCOMMON/MQRSCOMMON@netbank file=minqingcomm1212.dmp log=minqingcomm.log
+exp MQRSPERBANK/MQRSPERBANK@netbank file=minqingperbank1212.dmp log=minqingperbank.log
+exp MQRSFIRMBANK/MQRSFIRMBANK@netbank file=minqingfirmbank1212.dmp log=minqingfirmbank.log
+
+imp COMM_MINQING/ebank@ebank file=minqingcomm1212.dmp full=y
+imp PERBANK_MINQING/ebank@ebank file=minqingperbank1212.dmp full=y
+imp FIRMBANK_MINQING/ebank@ebank file=minqingfirmbank1212.dmp full=y
+
+
+exp MINQING_BANK/MINQING_BANK@ebank file=MINQING1219.dmp log=MINQING.log

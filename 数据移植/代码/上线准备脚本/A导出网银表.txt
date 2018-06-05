@@ -1,0 +1,43 @@
+----需生产导出网银表
+select * from PB_ACC_INF;
+select * from PB_CERT_INF;
+select * from PB_CST_INF;
+select * from PB_REL_CST_BOOK;
+select * from PB_CST_CURR_LIMIT;
+select * from PB_CST_TRANS_LIMIT;
+
+PB_FIX_CURRENT_TRAN
+PB_ELECTRONIC_BILL
+PB_TRANSFER
+PB_TRAN_FLOW
+
+--导入后进行数据备份
+drop table PB_ACC_INF_1128;
+
+drop table PB_CERT_INF_1128;
+
+drop table PB_CST_INF_1128;
+
+drop table PB_REL_CST_BOOK_1128;
+
+drop table PB_CST_CURR_LIMIT_1128;
+
+drop table  PB_CST_TRANS_LIMIT_1128;
+
+create table PB_ACC_INF_1128 as 
+select * from PB_ACC_INF;
+
+create table PB_CERT_INF_1128 as 
+select * from PB_CERT_INF;
+
+create table PB_CST_INF_1128 as 
+select * from PB_CST_INF;
+
+create table PB_REL_CST_BOOK_1128 as 
+select * from PB_REL_CST_BOOK;
+
+create table PB_CST_CURR_LIMIT_1128 as 
+select * from PB_CST_CURR_LIMIT;
+
+create table  PB_CST_TRANS_LIMIT_1128 as 
+select * from PB_CST_TRANS_LIMIT;
